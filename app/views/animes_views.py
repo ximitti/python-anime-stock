@@ -1,4 +1,6 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
+from psycopg2 import errors
+from http import HTTPStatus
 
 from ..models.animes_models import TabelaAnimes
 
@@ -14,25 +16,57 @@ def get_create() -> dict:
     animes = TabelaAnimes()
 
     if request.method == "POST":
-        return animes.criar_anime(request.get_json())
+        try:
+            return animes.criar_anime(request.get_json()), HTTPStatus.CREATED
 
-    return animes.pegar_lista_anime()
+        except errors.UniqueViolation:
+            return {"error": "anime is already exists"}, HTTPStatus.UNPROCESSABLE_ENTITY
+
+        except KeyError as e:
+            return e.args[0], HTTPStatus.UNPROCESSABLE_ENTITY
+
+    return jsonify(animes.pegar_lista_anime()), HTTPStatus.OK
 
 
+# ---------------------------------------------
 @bp.route("/animes/<int:anime_id>", methods=["GET"])
 def filter(anime_id: int) -> dict:
     animes = TabelaAnimes()
 
-    return animes.pegar_anime_id(anime_id)
+    try:
+        return animes.pegar_anime_id(anime_id), HTTPStatus.OK
+
+    except Exception as e:
+        return e.args[0], HTTPStatus.NOT_FOUND
 
 
+# ---------------------------------------------
 @bp.route("/animes/<int:anime_id>", methods=["PATCH"])
-def update(anime_id: int) -> str:
+def update(anime_id: int) -> tuple:
+    animes = TabelaAnimes()
 
-    return f"<h1>Method {anime_id} {request.method}</h1>"
+    try:
+        return animes.atualizar_anime(anime_id, request.get_json()), HTTPStatus.OK
+
+    except KeyError as e:
+        return e.args[0], HTTPStatus.UNPROCESSABLE_ENTITY
+
+    except errors.UniqueViolation as e:
+        print(e)
+        return {"error": "anime is already exists"}, HTTPStatus.UNPROCESSABLE_ENTITY
+
+    except Exception as e:
+        return e.args[0], HTTPStatus.NOT_FOUND
 
 
+# ---------------------------------------------
 @bp.route("/animes/<int:anime_id>", methods=["DELETE"])
 def delete(anime_id: int) -> str:
+    animes = TabelaAnimes()
 
-    return f"<h1>Method {anime_id} {request.method}</h1>"
+    try:
+        return animes.apagar_anime(anime_id), HTTPStatus.NO_CONTENT
+
+    except Exception as e:
+
+        return e.args[0], HTTPStatus.NOT_FOUND
