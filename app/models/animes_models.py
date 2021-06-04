@@ -140,9 +140,6 @@ class TabelaAnimes:
 
         data.update(id=anime_id)
 
-        print(sql_query.as_string(conn))
-        print(anime_id)
-
         cur.execute(sql_query, data)
 
         query = cur.fetchone()
@@ -166,10 +163,10 @@ class TabelaAnimes:
         cur.execute(
             """
             DELETE FROM animes
-            WHERE id = %s
+            WHERE id = %(id)s
             RETURNING *;
             """,
-            (anime_id,),
+            {"id": anime_id},
         )
 
         query = cur.fetchone()
@@ -177,6 +174,6 @@ class TabelaAnimes:
         encerra_conexao_cursor(conn, cur)
 
         if query:
-            return ""
+            return "No content"
 
         raise Exception({"error": "Not Found"})
