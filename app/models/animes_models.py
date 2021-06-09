@@ -121,6 +121,7 @@ class TabelaAnimes:
         self._criar_tabela()
 
         campos_invalidos = self._validacao_campos(data)
+
         if campos_invalidos:
             raise KeyError(
                 {
@@ -129,7 +130,8 @@ class TabelaAnimes:
                 }
             )
 
-        data["anime"] = data["anime"].title()
+        if data.get("anime"):
+            data["anime"] = data["anime"].title()
 
         sql_query = sql.SQL("UPDATE animes SET {data} WHERE id = {id} RETURNING *;").format(
             data=sql.SQL(", ").join(
